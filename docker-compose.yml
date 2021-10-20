@@ -1,0 +1,86 @@
+version: '3.6'
+networks:
+  binar-postgres: { }
+
+services:
+  #  nginx:
+  #    image: nginx
+  #    ports:
+  #      - 8090:80
+  #    volumes:
+  #      - ./nginx/nginx-njs.conf:/etc/nginx/nginx.conf:ro
+  #      - ./nginx/config/cors.conf:/etc/nginx/config/cors.conf:ro
+  #      - ./nginx/route.conf:/etc/nginx/routes/bca.conf:ro
+  #      - ./nginx/config/nginx-njs.js:/etc/nginx/javascript/nginx.js:ro
+  #      - ./nginx/site-with-oauth2.conf:/etc/nginx/conf.d/default.conf:ro
+  #      - ./nginx/www:/var/www/html:ro
+  #      - ./cache/cdn:${CDN_PATH:-/opt/app/cache/cdn}:ro
+  #    networks:
+  #      - binar-postgres
+
+  #  postgres:
+  #    image: postgres:9.5
+  #    volumes:
+  #      - ./cache/postgres:/var/lib/postgresql/data
+  #    user: ${UID:-1000}:${GROUPS:-1000}
+  #    environment:
+  #      - POSTGRES_USER=${DB_USER:-postgres}
+  #      - POSTGRES_PASSWORD=${DB_PASS:-postgres}
+  #      - POSTGRES_DB=${DB_NAME:-postgres}
+  #      - PGDATA=/var/lib/postgresql/data/data
+  #      - TZ=Asia/Jakarta
+  #    ports:
+  #      - 5436:5432
+  #    networks:
+  #      binar-postgres:
+  #        aliases:
+  #          - ${DB_HOST:-postgres}
+
+  #  redis:
+  #    image: redis
+  #    volumes:
+  #      - ./cache/redis:/data
+  #    user: ${uid:-1000}:${groups:-1000}
+  #    networks:
+  #      binar-postgres:
+  #        aliases:
+  #          - ${redis_host:-redis}
+
+  spring:
+    image: maven:3-jdk-8
+    #    ports:
+    #      - "8090:8080"
+    # restart: unless-stopped
+    working_dir: /opt/app
+    volumes:
+      - .:/opt/app
+      - ./cache/maven:/var/maven/.m2
+      - ./cache/cdn:${CDN_PATH:-/opt/app/cache/cdn}
+    user: ${UID:-1000}:${GROUPS:-1000}
+    environment:
+      - TZ=Asia/Jakarta
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST:-postgres}:${DB_PORT:-5432}/${DB_NAME:-postgres}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASS:-postgres}
+      - SPRING_PROFILES_ACTIVE=${APP_ENV:-production}
+      #      - SPRING_CACHE_TYPE=redis
+      #      - SPRING_REDIS_HOST=${REDIS_HOST:-redis}
+      #      - SPRING_REDIS_PORT=${REDIS_PORT:-6379}
+      #      - SPRING_CACHE_REDIS_TIMETOLIVE=1000
+      - SECURITY_JWT_ENABLED=true
+      - SERVER_SERVLET_CONTEXT_PATH=/api
+      - MAVEN_CONFIG=/var/maven/.m2
+      - FILE_UPLOADDIR=${CDN_PATH:-/opt/app/cache/cdn/}
+      - FILE_SHOW_URL=${CDN_BASE_URL:-http://172.20.2.153:8090/cdn/}
+      - APP_UPLOADTO_CDN=${CDN_PATH:-/opt/app/cache/cdn/}
+      - "MAVEN_OPTS=-Xmx2048m -XX:MaxPermSize=500m"
+      - CRON_EXPRESSION=${CRON_EXPRESSION:-0 0 1 */14 * ?}
+      - CRON_EXPRESSION_USER=${CRON_EXPRESSION_USER:-0 1 *  * * ?}
+
+    networks:
+      binar-postgres:
+        aliases:
+          - oauth2.api
+          - hr.api
+    command: [ "mvn", "-Duser.home=/var/maven", "spring-boot:run" ]
+#command: [ "mvn", "-Duser.home=/var/maven", "spring-boot:run" ]
