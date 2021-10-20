@@ -37,7 +37,7 @@ public class MainControllerTest {
         ResponseEntity<Object> exchange = testRestTemplate.exchange(
                 "http://localhost:" + port + "/register",
                 HttpMethod.POST,
-                new HttpEntity<>("{ \"username\": \"evan@mail.com\", \"fullname\": \"evan\", \"password\": \"password\" }", headers),
+                new HttpEntity<>("{ \"username\": \"zain@mail.com\", \"fullname\": \"zain\", \"password\": \"password\" }", headers),
                 Object.class
         );
 
